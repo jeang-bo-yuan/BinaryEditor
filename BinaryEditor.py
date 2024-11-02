@@ -30,21 +30,21 @@ class BinaryEditor:
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
         file_menu.add_command(label="Save As", command=self.save_file_as)
-        file_menu.add_command(label="Search",command=self.search)
+        file_menu.add_command(label="Search", command=self.search)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.exit_application)
 
         # 清除標記
         self.root.bind("<Escape>", self.table.clearHighlights)
-        
+
         # 添加 Page Size 選單
         page_size_menu = tk.Menu(self.menu)
         self.menu.add_cascade(label="Page Size", menu=page_size_menu)
 
         # 頁面大小選項
-        for size in [10, 20, 30, 40]:
+        for size in [10, 20, 30]:
             page_size_menu.add_command(
-                label=f"{size} bytes", command=lambda s=size: self.set_page_size(s))
+                label=f"{size} x {size} bytes", command=lambda s=size: self.set_page_size(s))
 
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
@@ -113,6 +113,7 @@ class BinaryEditor:
         except ValueError as e:
             print(f"Error: {e}")
 
+        self.update_buttons()
         self.update_info_label()
 
     def update_buttons(self):
@@ -154,39 +155,42 @@ class BinaryEditor:
     def search(self):
         # 使用 simpledialog 顯示輸入框
         if self.file_opened:
-            search_term = simpledialog.askstring("Input", "Enter search term:", parent=self.root)
-            
+            search_term = simpledialog.askstring(
+                "Input", "Enter search term:", parent=self.root)
+
             if search_term:
                 # 將搜索字符轉換為 bytes
                 search_bytes = search_term.encode('utf-8')
-                
+
                 # 獲取當前的二進制數據
                 binary_data = self.table.getData()
-                
+
                 # 清除之前的標記
                 self.table.clearHighlights()
-                
+
                 # 查找字符並標記
                 start_index = 0
                 while True:
                     start_index = binary_data.find(search_bytes, start_index)
                     if start_index == -1:
                         break
-                    
+
                     # 標記找到的字元為黃色
-                    self.table.highlight(start_index, start_index + len(search_bytes))
+                    self.table.highlight(
+                        start_index, start_index + len(search_bytes))
                     start_index += len(search_bytes)  # 移動到下一個搜索位置
-                    
+
                 print(f"Searching for: {search_term}")
         else:
             alert = tk.Toplevel(self.root)
             alert.title("Alert")
 
-            label = tk.Label(alert,text="No file opened!")
-            label.pack(padx=20,pady=20)
+            label = tk.Label(alert, text="No file opened!")
+            label.pack(padx=20, pady=20)
 
             # 按鈕來關閉警示視窗
-            close_button = tk.Button(alert, text="Close", command=alert.destroy)
+            close_button = tk.Button(
+                alert, text="Close", command=alert.destroy)
             close_button.pack(side="bottom")
             self.center_window(alert)
 
