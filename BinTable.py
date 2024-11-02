@@ -188,11 +188,11 @@ class BinTable(tk.Frame):
         """
         return self.m_page
 
-    def clearHighlights(self,event=None):
+    def clearHighlights(self, event=None):
         """ 清除所有高亮顯示 """
         for entry in self.m_entries:
-            entry.configure(background="gray81" 
-                            if (self.m_entries.index(entry) // self.m_size + self.m_entries.index(entry) % self.m_size) 
+            entry.configure(background="gray81"
+                            if (self.m_entries.index(entry) // self.m_size + self.m_entries.index(entry) % self.m_size)
                             % 2 == 0 else "white")
 
     def highlight(self, start: int, end: int):
