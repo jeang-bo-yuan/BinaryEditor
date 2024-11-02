@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import filedialog
 # import binascii
 import os
+import math
 
 import BinTable
 
@@ -41,7 +42,7 @@ class BinaryEditor:
 
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
-            self.root, text="File Size: 0 bytes      |      Page 0")
+            self.root, text="File Size: 0 bytes      |      Page 0 / 0")
         self.info_label.pack(side=tk.BOTTOM)
 
         # 添加上一頁和下一頁的按鈕
@@ -81,7 +82,8 @@ class BinaryEditor:
             # self.table.delete(1.0, tk.END)   # 清空顯示內容
             self.root.title(
                 f"Binary Editor ({os.path.relpath(self.file_path, '.')})")
-
+            self.table.setMaxPage(
+                math.ceil(os.path.getsize(self.file_path)/100))
             self.file = open(self.file_path, 'rb')
             binary_data = self.file.read()
             self.table.setData(binary_data)
@@ -105,6 +107,8 @@ class BinaryEditor:
         except ValueError as e:
             print(f"Error: {e}")
 
+        self.update_info_label()
+
     def update_buttons(self):
         # 如果在第一頁，禁用“上一頁”按鈕
         if self.table.getPageNum() == 0:
@@ -112,10 +116,15 @@ class BinaryEditor:
         else:
             self.prev_button.config(state=tk.NORMAL)
 
+        if self.table.getPageNum() + 1 == self.table.getMaxPage():
+            self.next_button.config(state=tk.DISABLED)
+        else:
+            self.next_button.config(state=tk.NORMAL)
+
     def update_info_label(self):
         # 更新資訊標籤
         self.info_label.config(
-            text=f"File Size: {len(self.table.getData())} bytes      |      Page {self.table.getPageNum()}")
+            text=f"File Size: {len(self.table.getData())} bytes      |      Page {self.table.getPageNum()+1} / {self.table.getMaxPage()}")
 
     def write_to_file(self, path):
         # 打開文件並寫入數據
