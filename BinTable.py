@@ -13,21 +13,22 @@ class BinTable(tk.Frame):
     顯示二進制資料的表格，大小為 size * size，每一個格子都是一個 tk.Entry。
     用法：
     - 初始化時傳入 data、size （初始化後可用 setData()、resize() 來修改）
-    - nextPage()、prevPage()換頁
+    - nextPage()、prevPage()換頁（頁面的範圍 0 ~ getMaxPage()）
 
     Getter:
     - getData() : 取得資料
+    - getMaxPage() : 最大的頁數
     - getPageNum() : 取得頁數
     """
     # constants ##########################
     HEX_VALIDATOR: tuple
 
     # private members ####################
-    m_data: bytearray
-    m_entries: list[tk.Entry] | None
-    m_page: int
-    m_max_page: int
-    m_size: int
+    m_data: bytearray                  # 檔案的資料
+    m_entries: list[tk.Entry] | None   # 大小為 m_size * m_size，只包含「顯示出來」的格子
+    m_page: int        # 目前在的頁數
+    m_max_page: int    # 最大頁數
+    m_size: int        # 每頁表格的大小
 
     def __init__(self, parent: tk.Misc, data: bytearray = [], size: int = 10):
         """
@@ -40,11 +41,8 @@ class BinTable(tk.Frame):
         self.m_entries = None
         self.m_page = 0
         self.m_max_page = 0
+        self.m_size = 0
         self.resize(size)
-
-        if DEBUG_MODE:
-            self.winfo_toplevel().bind("<Control-p>", self.prevPage)
-            self.winfo_toplevel().bind("<Control-n>", self.nextPage)
 
     def __init_validator__(self):
         """
@@ -80,8 +78,15 @@ class BinTable(tk.Frame):
 
     def __update_content__(self):
         """
-        依據m_data來更新表格顯示的內容
+        當「m_data」或「table大小」有變動時呼叫
+        1. 更新m_max_page的值
+        2. 依據m_data來更新表格顯示的內容
         """
+        if len(self.m_data) == 0:
+            self.m_max_page = 0
+        else:
+            self.m_max_page = (len(self.m_data) - 1) // (self.m_size * self.m_size)
+
         for row in range(self.m_size):
             for col in range(self.m_size):
                 # 表格的index
@@ -105,8 +110,9 @@ class BinTable(tk.Frame):
         """
         重新調整大小
         """
-        self.m_size = new_size
-        self.m_max_page = math.ceil(len(self.m_data) / (new_size * new_size))
+        if self.m_size == new_size: # 大小不變，忽略
+            return
+        
         # 刪掉舊的表格
         if self.m_entries is not None:
             for entry in self.m_entries:
@@ -126,6 +132,15 @@ class BinTable(tk.Frame):
                 self.m_entries[-1].grid(row=row, column=col,
                                         sticky=(tk.W, tk.E, tk.S, tk.N))
 
+        # 變小，將表格外的區域的weight設成0
+        if new_size < self.m_size:
+            for r in range(new_size, self.m_size):
+                self.rowconfigure(r, weight=0)
+
+            for c in range(new_size, self.m_size):
+                self.columnconfigure(c, weight=0)
+
+        self.m_size = new_size
         self.__update_content__()
 
     def setData(self, data: bytearray):
@@ -140,6 +155,9 @@ class BinTable(tk.Frame):
         """
         頁數加1
         """
+        if self.m_page == self.m_max_page: # 沒有下一頁
+            return
+        
         self.__write_back__()
 
         self.m_page += 1
@@ -175,12 +193,6 @@ class BinTable(tk.Frame):
         回傳最大頁數
         """
         return self.m_max_page
-
-    def setMaxPage(self, max_page):
-        """
-        回傳最大頁數
-        """
-        self.m_max_page = max_page
 
     def getPageNum(self) -> int:
         """

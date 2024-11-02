@@ -48,7 +48,7 @@ class BinaryEditor:
 
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
-            self.root, text="File Size: 0 bytes      |      Page 0 / 0")
+            self.root, text="File Size: 0 bytes      |      Page 1 / 1")
         self.info_label.pack(side=tk.BOTTOM)
 
         # 添加上一頁和下一頁的按鈕
@@ -59,19 +59,6 @@ class BinaryEditor:
         self.next_button = tk.Button(
             self.root, text="Next Page", command=self.next_page)
         self.next_button.pack(side=tk.RIGHT)
-
-# =============================================================================
-#         # 添加設定每一頁能顯示多少byte
-#         self.page_size_entry = tk.Entry(self.root)
-#         self.page_size_entry.pack(side=tk.TOP)
-#         self.page_size_entry.insert(0, "10")  # 預設值
-#         # 修改：按下 Enter 後觸發 set_page_size
-#         self.page_size_entry.bind("<Return>", lambda x: self.set_page_size())
-#
-#         self.set_page_size_button = tk.Button(
-#             self.root, text="Set Page Size", command=self.set_page_size)
-#         self.set_page_size_button.pack(side=tk.BOTTOM)
-# =============================================================================
 
         # 各種變數
         self.file_path = None
@@ -84,11 +71,11 @@ class BinaryEditor:
     def open_file(self):
         self.file_path = filedialog.askopenfilename(initialdir='.')
         if self.file_path:
-            # self.table.delete(1.0, tk.END)   # 清空顯示內容
+            # 改標題
             self.root.title(
                 f"Binary Editor ({os.path.relpath(self.file_path, '.')})")
-            self.table.setMaxPage(
-                math.ceil(os.path.getsize(self.file_path)/100))
+            
+            # 讀檔，然後傳進table中
             self.file = open(self.file_path, 'rb')
             binary_data = self.file.read()
             self.table.setData(binary_data)
@@ -123,7 +110,7 @@ class BinaryEditor:
         else:
             self.prev_button.config(state=tk.NORMAL)
 
-        if self.table.getPageNum() + 1 == self.table.getMaxPage():
+        if self.table.getPageNum() == self.table.getMaxPage():
             self.next_button.config(state=tk.DISABLED)
         else:
             self.next_button.config(state=tk.NORMAL)
@@ -131,7 +118,7 @@ class BinaryEditor:
     def update_info_label(self):
         # 更新資訊標籤
         self.info_label.config(
-            text=f"File Size: {len(self.table.getData())} bytes      |      Page {self.table.getPageNum()+1} / {self.table.getMaxPage()}")
+            text=f"File Size: {len(self.table.getData())} bytes      |      Page {self.table.getPageNum()+1} / {self.table.getMaxPage()+1}")
 
     def write_to_file(self, path):
         # 打開文件並寫入數據
