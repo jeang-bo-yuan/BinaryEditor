@@ -3,6 +3,7 @@
 """
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import simpledialog
 # import binascii
 import os
 
@@ -27,9 +28,13 @@ class BinaryEditor:
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
         file_menu.add_command(label="Save As", command=self.save_file_as)
+        file_menu.add_command(label="Search",command=self.search)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.exit_application)
 
+        # 清除標記
+        self.root.bind("<Escape>", self.table.clearHighlights)
+        
         # 添加 Page Size 選單
         page_size_menu = tk.Menu(self.menu)
         self.menu.add_cascade(label="Page Size", menu=page_size_menu)
@@ -134,6 +139,33 @@ class BinaryEditor:
                                                      filetypes=[("Binary files", "*.bin"), ("Image files", "*.png"), ("All files", "*.*")])
         if new_file_path:
             self.write_to_file(new_file_path)
+
+    def search(self):
+        # 使用 simpledialog 顯示輸入框
+        search_term = simpledialog.askstring("Input", "Enter search term:", parent=self.root)
+        
+        if search_term:
+            # 將搜索字符轉換為 bytes
+            search_bytes = search_term.encode('utf-8')
+            
+            # 獲取當前的二進制數據
+            binary_data = self.table.getData()
+            
+            # 清除之前的標記
+            self.table.clearHighlights()
+            
+            # 查找字符並標記
+            start_index = 0
+            while True:
+                start_index = binary_data.find(search_bytes, start_index)
+                if start_index == -1:
+                    break
+                
+                # 標記找到的字元為黃色
+                self.table.highlight(start_index, start_index + len(search_bytes))
+                start_index += len(search_bytes)  # 移動到下一個搜索位置
+                
+            print(f"Searching for: {search_term}")
 
     # 離開
     def exit_application(self):

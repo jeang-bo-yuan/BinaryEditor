@@ -172,3 +172,16 @@ class BinTable(tk.Frame):
         取得目前在的頁數
         """
         return self.m_page
+
+    def clearHighlights(self,event=None):
+        """ 清除所有高亮顯示 """
+        for entry in self.m_entries:
+            entry.configure(background="gray81" 
+                            if (self.m_entries.index(entry) // self.m_size + self.m_entries.index(entry) % self.m_size) 
+                            % 2 == 0 else "white")
+
+    def highlight(self, start: int, end: int):
+        """ 高亮顯示找到的範圍 """
+        for idx in range(start, end):
+            if idx < len(self.m_entries):
+                self.m_entries[idx].configure(background="yellow")
