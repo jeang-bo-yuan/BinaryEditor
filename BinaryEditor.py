@@ -41,7 +41,7 @@ class BinaryEditor:
         self.menu.add_cascade(label="Page Size", menu=page_size_menu)
 
         # 頁面大小選項
-        for size in [10, 20, 30, 40]:
+        for size in [10, 20, 30]:
             page_size_menu.add_command(
                 label=f"{size} x {size} bytes", command=lambda s=size: self.set_page_size(s))
 
