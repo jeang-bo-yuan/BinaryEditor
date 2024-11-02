@@ -3,8 +3,10 @@
 """
 import tkinter as tk
 import re
+import math
 
 DEBUG_MODE = False
+
 
 class BinTable(tk.Frame):
     """
@@ -12,20 +14,20 @@ class BinTable(tk.Frame):
     用法：
     - 初始化時傳入 data、size （初始化後可用 setData()、resize() 來修改）
     - nextPage()、prevPage()換頁
-    
+
     Getter:
     - getData() : 取得資料
     - getPageNum() : 取得頁數
     """
     # constants ##########################
     HEX_VALIDATOR: tuple
-    
+
     # private members ####################
     m_data: bytearray
     m_entries: list[tk.Entry] | None
     m_page: int
+    m_max_page: int
     m_size: int
-    
 
     def __init__(self, parent: tk.Misc, data: bytearray = [], size: int = 10):
         """
@@ -37,12 +39,12 @@ class BinTable(tk.Frame):
         self.m_data = bytearray(data)
         self.m_entries = None
         self.m_page = 0
+        self.m_max_page = 0
         self.resize(size)
 
         if DEBUG_MODE:
             self.winfo_toplevel().bind("<Control-p>", self.prevPage)
             self.winfo_toplevel().bind("<Control-n>", self.nextPage)
-        
 
     def __init_validator__(self):
         """
@@ -52,7 +54,6 @@ class BinTable(tk.Frame):
             return re.match("^[0-9a-fA-F]{0,2}$", num) is not None
         self.HEX_VALIDATOR = (self.register(isHex), "%P")
 
-    
     def __write_back__(self):
         """
         將表格的內容寫回m_data
@@ -65,16 +66,17 @@ class BinTable(tk.Frame):
                 src_idx = idx + self.m_page * self.m_size * self.m_size
 
                 # 超出範圍
-                if src_idx >= len(self.m_data):  break
-                
+                if src_idx >= len(self.m_data):
+                    break
+
                 try:
-                    self.m_data[src_idx] = int(self.m_entries[idx].get(), base=16)
+                    self.m_data[src_idx] = int(
+                        self.m_entries[idx].get(), base=16)
                 except ValueError:
                     self.m_data[src_idx] = 0
-        
-        if DEBUG_MODE: print(self.m_data)
-                
 
+        if DEBUG_MODE:
+            print(self.m_data)
 
     def __update_content__(self):
         """
@@ -99,13 +101,12 @@ class BinTable(tk.Frame):
                     txt = "%02x" % self.m_data[src_idx]
                     self.m_entries[idx].insert(0, txt)
 
-
     def resize(self, new_size: int):
         """
         重新調整大小
         """
         self.m_size = new_size
-
+        self.m_max_page = math.ceil(len(self.m_data) / (new_size * new_size))
         # 刪掉舊的表格
         if self.m_entries is not None:
             for entry in self.m_entries:
@@ -120,10 +121,11 @@ class BinTable(tk.Frame):
 
                 # 新的格子
                 self.m_entries.append(tk.Entry(self, width=4, borderwidth=1,
-                                               validate= 'key', validatecommand= self.HEX_VALIDATOR,
-                                               background="gray81" if (row + col)&1 else "white"))
-                self.m_entries[-1].grid(row=row, column=col, sticky=(tk.W, tk.E, tk.S, tk.N))
-        
+                                               validate='key', validatecommand=self.HEX_VALIDATOR,
+                                               background="gray81" if (row + col) & 1 else "white"))
+                self.m_entries[-1].grid(row=row, column=col,
+                                        sticky=(tk.W, tk.E, tk.S, tk.N))
+
         self.__update_content__()
 
     def setData(self, data: bytearray):
@@ -134,7 +136,6 @@ class BinTable(tk.Frame):
         self.m_page = 0
         self.__update_content__()
 
-
     def nextPage(self, *args):
         """
         頁數加1
@@ -142,7 +143,8 @@ class BinTable(tk.Frame):
         self.__write_back__()
 
         self.m_page += 1
-        if DEBUG_MODE: print(f'Page: {self.m_page}')
+        if DEBUG_MODE:
+            print(f'Page: {self.m_page}')
 
         self.__update_content__()
 
@@ -150,15 +152,16 @@ class BinTable(tk.Frame):
         """
         頁數減1
         """
-        if (self.m_page == 0): return
+        if (self.m_page == 0):
+            return
 
         self.__write_back__()
-        
+
         self.m_page -= 1
-        if DEBUG_MODE: print(f'Page: {self.m_page}')
+        if DEBUG_MODE:
+            print(f'Page: {self.m_page}')
 
         self.__update_content__()
-
 
     def getData(self) -> bytearray:
         """
@@ -166,7 +169,19 @@ class BinTable(tk.Frame):
         """
         self.__write_back__()
         return self.m_data
-    
+
+    def getMaxPage(self):
+        """
+        回傳最大頁數
+        """
+        return self.m_max_page
+
+    def setMaxPage(self, max_page):
+        """
+        回傳最大頁數
+        """
+        self.m_max_page = max_page
+
     def getPageNum(self) -> int:
         """
         取得目前在的頁數
