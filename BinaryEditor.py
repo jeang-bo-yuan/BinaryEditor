@@ -181,8 +181,10 @@ class BinaryEditor:
             close_button.pack(side="bottom")
             self.center_window(alert)
 
-            # 綁定主視窗移動事件
-            self.root.bind("<Configure>", lambda e: self.center_window(alert))
+            # 讓alert顯示在上層，https://stackoverflow.com/questions/16803686/how-to-create-a-modal-dialog-in-tkinter
+            alert.wait_visibility()
+            alert.grab_set()
+            alert.transient(self.root)
 
     # 視窗位置
     def center_window(self, window):
