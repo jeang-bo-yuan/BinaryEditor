@@ -19,13 +19,18 @@ class BinTable(tk.Frame):
     - getData() : 取得資料
     - getMaxPage() : 最大的頁數
     - getPageNum() : 取得頁數
+
+    Highlight:
+    - clearHighlights() : 清除所有的標記
+    - highlight() : 將「資料」中某段範圍給標記
     """
     # constants ##########################
     HEX_VALIDATOR: tuple
 
     # private members ####################
     m_data: bytearray                  # 檔案的資料
-    m_entries: list[tk.Entry] | None   # 大小為 m_size * m_size，只包含「顯示出來」的格子
+    m_data_hilit: list[bool]           # 記錄檔案中哪些資料被標記（大小和 m_data 一樣大）
+    m_entries: list[tk.Entry] | None   # 大小為 m_size * m_size，只包含「顯示出來」的格子（以Row Major的方式儲存）
     m_page: int        # 目前在的頁數
     m_max_page: int    # 最大頁數
     m_size: int        # 每頁表格的大小
@@ -38,6 +43,7 @@ class BinTable(tk.Frame):
         self.__init_validator__()
 
         self.m_data = bytearray(data)
+        self.m_data_hilit = [False for _ in range(len(self.m_data))]
         self.m_entries = None
         self.m_page = 0
         self.m_max_page = 0
@@ -87,24 +93,36 @@ class BinTable(tk.Frame):
         else:
             self.m_max_page = (len(self.m_data) - 1) // (self.m_size * self.m_size)
 
-        for row in range(self.m_size):
-            for col in range(self.m_size):
-                # 表格的index
-                idx = (row * self.m_size) + col
-                # 對應原陣列中的哪個byte
-                src_idx = idx + self.m_page * self.m_size * self.m_size
+        page_start = self.m_page * len(self.m_entries)  # 目前的頁面的第一個 byte 在 m_data 的 index
 
-                # 清空內容
-                self.m_entries[idx].delete(0, tk.END)
+        # 對於每個格子
+        for entry_idx, entry in enumerate(self.m_entries):
+            # 清空內容
+            entry.delete(0, tk.END)
+            
+            # 如果該格子沒有在 m_data 中對應的資料
+            if (data_idx := page_start + entry_idx) >= len(self.m_data):
+                entry.configure(state=tk.DISABLED)
+            else:
+                # 重設背景
+                entry.configure(background=self.__bg__(entry_idx))
+                # 啟用
+                entry.configure(state=tk.NORMAL)
+                # 設置內容
+                txt = "%02x" % self.m_data[data_idx]
+                entry.insert(0, txt)                   
 
-                if src_idx >= len(self.m_data):
-                    # 停用
-                    self.m_entries[idx].configure(state=tk.DISABLED)
-                else:
-                    # 設置內容
-                    self.m_entries[idx].configure(state=tk.NORMAL)
-                    txt = "%02x" % self.m_data[src_idx]
-                    self.m_entries[idx].insert(0, txt)
+
+    def __bg__(self, entry_idx: int):
+        """ 取得self.m_entries[entry_idx] 的背景顏色 """
+        data_idx = self.m_page * len(self.m_entries) + entry_idx # 該格子對應到 m_data 中的哪個資料
+
+        if data_idx < len(self.m_data_hilit) and self.m_data_hilit[data_idx]:
+            return "yellow"
+        elif (entry_idx // self.m_size + entry_idx % self.m_size) % 2:
+            return "gray81"
+        else:
+            return "white"
 
     def resize(self, new_size: int):
         """
@@ -118,7 +136,7 @@ class BinTable(tk.Frame):
             for entry in self.m_entries:
                 entry.destroy()
 
-        # 建立新的表格
+        # 建立新的表格，Row Major
         self.m_entries = list()
         for row in range(new_size):
             for col in range(new_size):
@@ -127,8 +145,7 @@ class BinTable(tk.Frame):
 
                 # 新的格子
                 self.m_entries.append(tk.Entry(self, width=4, borderwidth=1,
-                                               validate='key', validatecommand=self.HEX_VALIDATOR,
-                                               background="gray81" if (row + col) & 1 else "white"))
+                                               validate='key', validatecommand=self.HEX_VALIDATOR))
                 self.m_entries[-1].grid(row=row, column=col,
                                         sticky=(tk.W, tk.E, tk.S, tk.N))
 
@@ -148,6 +165,7 @@ class BinTable(tk.Frame):
         重新設定data
         """
         self.m_data = bytearray(data)
+        self.m_data_hilit = [False for _ in range(len(self.m_data))] # 清空選擇
         self.m_page = 0
         self.__update_content__()
 
@@ -202,13 +220,19 @@ class BinTable(tk.Frame):
 
     def clearHighlights(self, event=None):
         """ 清除所有高亮顯示 """
-        for entry in self.m_entries:
-            entry.configure(background="gray81"
-                            if (self.m_entries.index(entry) // self.m_size + self.m_entries.index(entry) % self.m_size)
-                            % 2 == 0 else "white")
+        self.m_data_hilit = [False for _ in range(len(self.m_data))]
+        for i, entry in enumerate(self.m_entries):
+            entry.configure(background=self.__bg__(i))
 
     def highlight(self, start: int, end: int):
-        """ 高亮顯示找到的範圍 """
+        """ 將 data 中 [start, end) 的範圍標記起來 """
+        page_size = len(self.m_entries)      # 目前的頁面可以放幾個 bytes
+        page_start = self.m_page * page_size # 這一頁的第一個 byte 在 m_data 的 index
+
         for idx in range(start, end):
-            if idx < len(self.m_entries):
-                self.m_entries[idx].configure(background="yellow")
+            self.m_data_hilit[idx] = True
+
+            # 如果 m_data[idx] 顯示在目前的頁面
+            if (entry_idx := idx - page_start) < page_size and entry_idx >= 0:
+                self.m_entries[entry_idx].configure(background=self.__bg__(entry_idx))
+
