@@ -5,7 +5,8 @@ import math
 
 class SelectRange:
     """
-    這個class用了兩個變數來記錄選取的範圍（start和end）
+    這個class用了兩個變數來記錄選取的範圍（start和end）。
+    選取的範圍包含了兩個端點。
     
     選取：
     - selectSingle() : 選擇單一個點
@@ -66,17 +67,30 @@ class SelectRange:
     def toTuple(self, low=0, high=math.inf) -> tuple[int, int] | None:
         """
         將選取範圍轉成一個有序數組（ordered tuple）。
-        參數 low, high 用來將回傳值給 clamp 到 [low, high) 的範圍。
+        參數 low, high 用來將回傳值給 clamp 到 [low, high] 的範圍。
+
+        Return:
+            (a, b) - 代表序列中 [a, b] 的範圍被選取（low <= a <= b <= high）
+
+        Example:
+        ```
+        # 0 <= a <= b <= len(A) - 1
+        a, b = select_range.toTuple(high=len(A)-1)
+        # 將選取範圍切割出來
+        A[a:b+1]
+        ```
         """
+        if low > high:
+            raise ValueError("SelectRange.toTuple() - low > high is not allowed")
         if self.m_start is None:
             return None
         
         a = min(self.m_start, self.m_end)
         b = max(self.m_start, self.m_end)
 
-        # 分別將 a, b clamp 到 [low, high - 1) 的範圍
-        a = min(max(low, a), high - 1)
-        b = min(max(low, b), high - 1)
+        # 分別將 a, b clamp 到 [low, high] 的範圍
+        a = min(max(low, a), high)
+        b = min(max(low, b), high)
 
         return (a, b)
 
