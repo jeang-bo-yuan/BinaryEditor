@@ -4,6 +4,7 @@
 import tkinter as tk
 import re
 import math
+from SelectRange import SelectRange
 
 DEBUG_MODE = False
 
@@ -20,9 +21,13 @@ class BinTable(tk.Frame):
     - getMaxPage() : 最大的頁數
     - getPageNum() : 取得頁數
 
-    Highlight:
+    Highlight （單純的顏色標記，黃色）:
     - clearHighlights() : 清除所有的標記
     - highlight() : 將「資料」中某段範圍給標記
+
+    選擇byte （藍色）:
+    - 滑鼠左鍵           選擇一個byte
+    - Shift + 滑鼠左鍵   選擇多個byte
     """
     # constants ##########################
     HEX_VALIDATOR: tuple
@@ -30,6 +35,7 @@ class BinTable(tk.Frame):
     # private members ####################
     m_data: bytearray                  # 檔案的資料
     m_data_hilit: list[bool]           # 記錄檔案中哪些資料被標記（大小和 m_data 一樣大）
+    m_data_select: SelectRange         # 記錄哪些byte被選中
     m_entries: list[tk.Entry] | None   # 大小為 m_size * m_size，只包含「顯示出來」的格子（以Row Major的方式儲存）
     m_page: int        # 目前在的頁數
     m_max_page: int    # 最大頁數
@@ -44,6 +50,7 @@ class BinTable(tk.Frame):
 
         self.m_data = bytearray(data)
         self.m_data_hilit = [False for _ in range(len(self.m_data))]
+        self.m_data_select = SelectRange()
         self.m_entries = None
         self.m_page = 0
         self.m_max_page = 0
@@ -111,12 +118,33 @@ class BinTable(tk.Frame):
         """ 取得self.m_entries[entry_idx] 的背景顏色 """
         data_idx = self.__entry2data__(entry_idx) # 該格子對應到 m_data 中的哪個資料
 
-        if data_idx < len(self.m_data_hilit) and self.m_data_hilit[data_idx]:
-            return "yellow"
-        elif (entry_idx // self.m_size + entry_idx % self.m_size) % 2:
-            return "gray81"
+       # 副顏色
+        sub = 0 
+        if self.m_data_select.contain(data_idx):
+            sub = 1
+        elif data_idx < len(self.m_data_hilit) and self.m_data_hilit[data_idx]:
+            sub = 2
+        
+        # 主顏色
+        if (entry_idx // self.m_size + entry_idx % self.m_size) % 2:
+            return ["gray81", "#6767E7", "#E7E767"][sub]
         else:
-            return "white"
+            return ["white", "#4444FF", "yellow"][sub]
+        
+    def __entry_on_click__(self, entry_idx: int, shift: bool):
+        """
+        當某個格子被點擊時呼叫。參數：格子的index、有沒有按shift
+        """
+        data_idx = self.__entry2data__(entry_idx)
+
+        if shift:
+            self.m_data_select.setEnd(data_idx)
+        else:
+            self.m_data_select.selectSingle(data_idx)
+
+        # 重設背景
+        for entry_idx, entry in enumerate(self.m_entries):
+            entry.configure(background=self.__bg__(entry_idx))
         
     def __entry2data__(self, entry_idx: int):
         """
@@ -150,10 +178,20 @@ class BinTable(tk.Frame):
                 self.columnconfigure(col, weight=1)
 
                 # 新的格子
-                self.m_entries.append(tk.Entry(self, width=4, borderwidth=1,
-                                               validate='key', validatecommand=self.HEX_VALIDATOR))
-                self.m_entries[-1].grid(row=row, column=col,
-                                        sticky=(tk.W, tk.E, tk.S, tk.N))
+                entry = tk.Entry(self, width=4, borderwidth=1,
+                                 validate='key', validatecommand=self.HEX_VALIDATOR)
+                self.m_entries.append(entry)
+                entry_idx = len(self.m_entries) - 1
+
+                # 顯示
+                entry.grid(row=row, column=col,
+                           sticky=(tk.W, tk.E, tk.S, tk.N))
+                
+                # 格子的點擊事件
+                entry.bind("<Button-1>", 
+                           lambda e, I=entry_idx: self.__entry_on_click__(I, False))
+                entry.bind("<Shift-Button-1>", 
+                           lambda e, I=entry_idx: self.__entry_on_click__(I, True))
 
         # 變小，將表格外的區域的weight設成0
         if new_size < self.m_size:
@@ -172,6 +210,7 @@ class BinTable(tk.Frame):
         """
         self.m_data = bytearray(data)
         self.m_data_hilit = [False for _ in range(len(self.m_data))] # 清空選擇
+        self.m_data_select.unselect()
         self.m_page = 0
         self.__update_content__()
 
