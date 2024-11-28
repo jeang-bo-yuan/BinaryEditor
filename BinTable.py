@@ -26,8 +26,9 @@ class BinTable(tk.Frame):
     - highlight() : 將「資料」中某段範圍給標記
 
     選擇byte （藍色）:
-    - 滑鼠左鍵           選擇一個byte
-    - Shift + 滑鼠左鍵   選擇多個byte
+    - 滑鼠左鍵                 選擇一個byte
+    - Shift + 滑鼠左鍵         選擇多個byte
+    - deleteSelectedBytes() : 將選中的bytes刪掉
     """
     # constants ##########################
     HEX_VALIDATOR: tuple
@@ -37,9 +38,20 @@ class BinTable(tk.Frame):
     m_data_hilit: list[bool]           # 記錄檔案中哪些資料被標記（大小和 m_data 一樣大）
     m_data_select: SelectRange         # 記錄哪些byte被選中
     m_entries: list[tk.Entry] | None   # 大小為 m_size * m_size，只包含「顯示出來」的格子（以Row Major的方式儲存）
-    m_page: int        # 目前在的頁數
-    m_max_page: int    # 最大頁數
+    m_page: int        # 目前在的頁數（從0開始）
+    m_max_page: int    # m_page 的最大值
     m_size: int        # 每頁表格的大小
+
+    def __sanity_check__(self):
+        """ 檢查內部資料是否合法 """
+        # 每個 data 都要記錄是否被 hilit
+        assert len(self.m_data) == len(self.m_data_hilit)
+        # 檢查 m_page 的範圍
+        assert 0 <= self.m_page and self.m_page <= self.m_max_page
+        # 顯示的格子數 == m_size ** 2
+        assert len(self.m_entries) == (self.m_size ** 2)
+        # 到最大頁數為止，可以涵蓋所有 data
+        assert len(self.m_entries) * (self.m_max_page + 1) >= len(self.m_data)
 
     def __init__(self, parent: tk.Misc, data: bytearray = [], size: int = 10):
         """
@@ -84,6 +96,8 @@ class BinTable(tk.Frame):
 
         if DEBUG_MODE:
             print(self.m_data)
+        
+        self.__sanity_check__()
 
     def __update_content__(self):
         """
@@ -111,7 +125,9 @@ class BinTable(tk.Frame):
                 entry.configure(state=tk.NORMAL)
                 # 設置內容
                 txt = "%02x" % self.m_data[data_idx]
-                entry.insert(0, txt)                   
+                entry.insert(0, txt)      
+
+        self.__sanity_check__()             
 
 
     def __bg__(self, entry_idx: int):
@@ -278,4 +294,24 @@ class BinTable(tk.Frame):
             entry_idx = self.__data2entry__(data_idx)
             if 0 <= entry_idx and entry_idx < len(self.m_entries):
                 self.m_entries[entry_idx].configure(background=self.__bg__(entry_idx))
+
+    def deleteSelectedBytes(self):
+        """ 將選中的bytes（藍色標記）刪除 """
+        R = self.m_data_select.toTuple()
+        if R is None:
+            return
+        
+        self.__write_back__()
+
+        # 刪除
+        start, end = R
+        if start < len(self.m_data):
+            del self.m_data[start : end + 1]
+            del self.m_data_hilit[start : end + 1]
+            print(f"{end - start + 1} bytes are deleted")
+
+        # 重設
+        self.m_data_select.unselect()
+        self.__update_content__()
+
 

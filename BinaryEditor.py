@@ -24,7 +24,7 @@ class BinaryEditor:
         self.menu = tk.Menu(self.root)
         self.root.config(menu=self.menu)
 
-        # 添加選單按鈕
+        # 添加選單按鈕 ##################################################################################
         file_menu = tk.Menu(self.menu)
         self.menu.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open", command=self.open_file)
@@ -37,7 +37,7 @@ class BinaryEditor:
         # 清除標記
         self.root.bind("<Escape>", self.table.clearHighlights)
 
-        # 添加 Page Size 選單
+        # 添加 Page Size 選單 ###########################################################################
         page_size_menu = tk.Menu(self.menu)
         self.menu.add_cascade(label="Page Size", menu=page_size_menu)
 
@@ -45,6 +45,11 @@ class BinaryEditor:
         for size in [10, 20, 30]:
             page_size_menu.add_command(
                 label=f"{size} x {size} bytes", command=lambda s=size: self.set_page_size(s))
+            
+        # 添加 Edit 選單 ###############################################################################
+        edit_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Delete Selected Bytes", command=lambda: self.table.deleteSelectedBytes())
 
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
