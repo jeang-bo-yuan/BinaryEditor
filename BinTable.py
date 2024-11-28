@@ -12,6 +12,8 @@ DEBUG_MODE = False
 class BinTable(tk.Frame):
     """
     顯示二進制資料的表格，大小為 size * size，每一個格子都是一個 tk.Entry。
+    當「表格大小變動」、「換頁」、「data長度變動」時，頁數可能會變，因此產生 <<PageChanged>> virtual event。
+
     用法：
     - 初始化時傳入 data、size （初始化後可用 setData()、resize() 來修改）
     - nextPage()、prevPage()換頁（頁面的範圍 0 ~ getMaxPage()）
@@ -127,7 +129,8 @@ class BinTable(tk.Frame):
                 txt = "%02x" % self.m_data[data_idx]
                 entry.insert(0, txt)      
 
-        self.__sanity_check__()             
+        self.__sanity_check__()
+        self.event_generate("<<PageChanged>>")
 
 
     def __bg__(self, entry_idx: int):

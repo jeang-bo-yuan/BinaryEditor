@@ -71,6 +71,9 @@ class BinaryEditor:
 
         # 更新按鈕
         self.update_buttons()
+        self.table.bind("<<PageChanged>>", 
+                        lambda e: (self.update_buttons(), self.update_info_label(), print("Page Changed"))
+                    )
 
     # 打開檔案
     def open_file(self):
@@ -86,27 +89,18 @@ class BinaryEditor:
             self.table.setData(binary_data)
 
             self.file_opened = True
-            self.update_buttons()
-            self.update_info_label()
 
     def next_page(self):
         self.table.nextPage()
-        self.update_buttons()
-        self.update_info_label()
 
     def prev_page(self):
         self.table.prevPage()
-        self.update_buttons()
-        self.update_info_label()
 
     def set_page_size(self, size):
         try:
             self.table.resize(size)
         except ValueError as e:
             print(f"Error: {e}")
-
-        self.update_buttons()
-        self.update_info_label()
 
     def update_buttons(self):
         # 如果在第一頁，禁用“上一頁”按鈕
