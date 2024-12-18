@@ -16,42 +16,21 @@ class BinaryEditor:
         self.root = root
         self.root.title("Binary Editor")
         self.file_opened = False  # 新增布林變數以追踪檔案狀態
-
+        
         # 修改：原本的text改成table
         self.table = BinTable.BinTable(self.root)
         self.table.pack(expand=True, fill=tk.BOTH)
+        # "ESC" 清除標記
+        self.root.bind("<Escape>", self.table.clearHighlights)
 
         self.menu = tk.Menu(self.root)
         self.root.config(menu=self.menu)
-
         # 添加選單按鈕 ##################################################################################
-        file_menu = tk.Menu(self.menu)
-        self.menu.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Open", command=self.open_file)
-        file_menu.add_command(label="Save", command=self.save_file)
-        file_menu.add_command(label="Save As", command=self.save_file_as)
-        file_menu.add_command(label="Search", command=self.search)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.exit_application)
-
-        # 清除標記
-        self.root.bind("<Escape>", self.table.clearHighlights)
-
+        self.create_file_menu()
         # 添加 Page Size 選單 ###########################################################################
-        page_size_menu = tk.Menu(self.menu)
-        self.menu.add_cascade(label="Page Size", menu=page_size_menu)
-
-        # 頁面大小選項
-        for size in [10, 20, 30]:
-            page_size_menu.add_command(
-                label=f"{size} x {size} bytes", command=lambda s=size: self.set_page_size(s))
-            
+        self.create_page_file_menu()
         # 添加 Edit 選單 ###############################################################################
-        edit_menu = tk.Menu(self.menu)
-        self.menu.add_cascade(label="Edit", menu=edit_menu)
-        edit_menu.add_command(label="Delete Selected Bytes", command=lambda: self.table.deleteSelectedBytes())
-        edit_menu.add_command(label="Insert Before", command=lambda: self.table.insertOneByte(insert_before=True))
-        edit_menu.add_command(label="Insert After", command=lambda: self.table.insertOneByte(insert_before=False))
+        self.create_edit_menu()
 
         # 添加 Display 選單 ############################################################################
         display_menu = tk.Menu(self.menu)
@@ -62,7 +41,7 @@ class BinaryEditor:
         display_menu.add_radiobutton(label="Octobor", command=lambda: self.table.setBase(8), value=8, variable=TMP)
         display_menu.add_radiobutton(label="Decimal", command=lambda: self.table.setBase(10), value=10, variable=TMP)
         display_menu.add_radiobutton(label="Hexdecimal", command=lambda: self.table.setBase(16), value=16, variable=TMP)
-
+        
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
             self.root, text="File Size: 0 bytes      |      Page 1 / 1")
@@ -103,6 +82,32 @@ class BinaryEditor:
             self.table.setData(binary_data)
 
             self.file_opened = True
+
+    def create_file_menu(self):
+        file_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Open", command=self.open_file)
+        file_menu.add_command(label="Save", command=self.save_file)
+        file_menu.add_command(label="Save As", command=self.save_file_as)
+        file_menu.add_command(label="Search", command=self.search)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.exit_application)
+        
+    def create_page_file_menu(self):
+        page_size_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="Page Size", menu=page_size_menu)
+
+        # 頁面大小選項
+        for size in [10, 20, 30]:
+            page_size_menu.add_command(
+                label=f"{size} x {size} bytes", command=lambda s=size: self.set_page_size(s))
+            
+    def create_edit_menu(self):
+        edit_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="Edit", menu=edit_menu)
+        edit_menu.add_command(label="Delete Selected Bytes", command=lambda: self.table.deleteSelectedBytes())
+        edit_menu.add_command(label="Insert Before", command=lambda: self.table.insertOneByte(insert_before=True))
+        edit_menu.add_command(label="Insert After", command=lambda: self.table.insertOneByte(insert_before=False))
 
     def next_page(self):
         self.table.nextPage()
