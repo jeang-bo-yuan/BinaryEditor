@@ -6,6 +6,7 @@ from tkinter import messagebox
 import re
 import math
 from SelectRange import SelectRange
+from ByteNumStr import ByteNumStr
 
 DEBUG_MODE = False
 
@@ -33,10 +34,8 @@ class BinTable(tk.Frame):
     - Shift + 滑鼠左鍵         選擇多個byte
     - deleteSelectedBytes() : 將選中的bytes刪掉
     """
-    # constants ##########################
-    HEX_VALIDATOR: tuple
-
     # private members ####################
+    m_BNS_convert: ByteNumStr          # 在數字和字串間轉換
     m_data: bytearray                  # 檔案的資料
     m_data_hilit: list[bool]           # 記錄檔案中哪些資料被標記（大小和 m_data 一樣大）
     m_data_select: SelectRange         # 記錄哪些byte被選中
@@ -61,8 +60,9 @@ class BinTable(tk.Frame):
         初始化。父 widget 為 parent，一開始顯示的內容為 data，表格大小為 size * size。
         """
         tk.Frame.__init__(self, parent)
-        self.__init_validator__()
 
+        self.m_BNS_convert = ByteNumStr(base=16)
+        self.m_BNS_convert.initValidator(self)
         self.m_data = bytearray(data)
         self.m_data_hilit = [False for _ in range(len(self.m_data))]
         self.m_data_select = SelectRange()
@@ -71,14 +71,6 @@ class BinTable(tk.Frame):
         self.m_max_page = 0
         self.m_size = 0
         self.resize(size)
-
-    def __init_validator__(self):
-        """
-        初始化entry的validator（用來確認輸入的格式）
-        """
-        def isHex(num):
-            return re.match("^[0-9a-fA-F]{0,2}$", num) is not None
-        self.HEX_VALIDATOR = (self.register(isHex), "%P")
 
     def __write_back__(self):
         """
@@ -93,7 +85,7 @@ class BinTable(tk.Frame):
                 break
 
             try:
-                self.m_data[data_idx] = int(entry.get(), base=16)
+                self.m_data[data_idx] = self.m_BNS_convert.toInt(entry.get())
             except ValueError:
                 self.m_data[data_idx] = 0
 
@@ -128,7 +120,7 @@ class BinTable(tk.Frame):
                 # 啟用
                 entry.configure(state=tk.NORMAL)
                 # 設置內容
-                txt = "%02x" % self.m_data[data_idx]
+                txt = self.m_BNS_convert.toString(self.m_data[data_idx])
                 entry.insert(0, txt)      
 
         self.__sanity_check__()
@@ -188,6 +180,7 @@ class BinTable(tk.Frame):
         
         # 刪掉舊的表格
         if self.m_entries is not None:
+            self.__write_back__()
             for entry in self.m_entries:
                 entry.destroy()
 
@@ -200,7 +193,7 @@ class BinTable(tk.Frame):
 
                 # 新的格子
                 entry = tk.Entry(self, width=4, borderwidth=1,
-                                 validate='key', validatecommand=self.HEX_VALIDATOR)
+                                 validate='key', validatecommand=self.m_BNS_convert.getValidator())
                 self.m_entries.append(entry)
                 entry_idx = len(self.m_entries) - 1
 
@@ -233,6 +226,16 @@ class BinTable(tk.Frame):
         self.m_data_hilit = [False for _ in range(len(self.m_data))] # 清空選擇
         self.m_data_select.unselect()
         self.m_page = 0
+        self.__update_content__()
+
+    def setBase(self, newBase: int):
+        """ 改變顯示的進制 """
+        self.__write_back__()
+        self.m_BNS_convert.setBase(newBase)
+
+        for entry in self.m_entries:
+            entry.configure(validatecommand=self.m_BNS_convert.getValidator())
+
         self.__update_content__()
 
     # page ##############################################################################################################
