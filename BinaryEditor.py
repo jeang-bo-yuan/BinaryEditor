@@ -16,12 +16,12 @@ class BinaryEditor:
         self.root = root
         self.root.title("Binary Editor")
         self.file_opened = False  # 新增布林變數以追踪檔案狀態
-        # "ESC" 清除標記
-        self.root.bind("<Escape>", self.table.clearHighlights)
-
+        
         # 修改：原本的text改成table
         self.table = BinTable.BinTable(self.root)
         self.table.pack(expand=True, fill=tk.BOTH)
+        # "ESC" 清除標記
+        self.root.bind("<Escape>", self.table.clearHighlights)
 
         self.menu = tk.Menu(self.root)
         self.root.config(menu=self.menu)
