@@ -79,8 +79,10 @@ class BinaryEditor:
 
     # 打開檔案
     def open_file(self):
-        self.file_path = filedialog.askopenfilename(initialdir='.')
-        if self.file_path:
+        PATH = filedialog.askopenfilename(initialdir='.')
+        if PATH:
+            # 只有真的有選擇檔案時才更新self.file_path
+            self.file_path = PATH
             # 改標題
             self.root.title(
                 f"Binary Editor ({os.path.relpath(self.file_path, '.')})")
