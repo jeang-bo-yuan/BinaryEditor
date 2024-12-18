@@ -50,6 +50,8 @@ class BinaryEditor:
         edit_menu = tk.Menu(self.menu)
         self.menu.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(label="Delete Selected Bytes", command=lambda: self.table.deleteSelectedBytes())
+        edit_menu.add_command(label="Insert Before", command=lambda: self.table.insertOneByte(insert_before=True))
+        edit_menu.add_command(label="Insert After", command=lambda: self.table.insertOneByte(insert_before=False))
 
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(

@@ -112,6 +112,7 @@ class BinTable(tk.Frame):
             self.m_max_page = 0
         else:
             self.m_max_page = (len(self.m_data) - 1) // (self.m_size * self.m_size)
+        self.m_page = min(self.m_page, self.m_max_page)
 
         # 對於每個格子
         for entry_idx, entry in enumerate(self.m_entries):
@@ -312,7 +313,6 @@ class BinTable(tk.Frame):
             end = min(end, len(self.m_data) - 1)
             if start >= len(self.m_data):
                 NoSelect = True
-
         if NoSelect:
             messagebox.showerror(None, "!!! No byte is selected !!!")
             return
@@ -327,4 +327,33 @@ class BinTable(tk.Frame):
         self.m_data_select.unselect()
         self.__update_content__()
 
+    def insertOneByte(self, *args, insert_before: bool):
+        """ 插入一個byte在選取範圍前或後 """
+        R = self.m_data_select.toTuple()
+
+        NoSelect = R is None
+        if not NoSelect:
+            start, end = R
+            end = min(end, len(self.m_data) - 1)
+            if start >= len(self.m_data):
+                NoSelect = True
+        if NoSelect:
+            messagebox.showerror(None, "!!! No byte is selected !!!")
+            return
+        
+        self.__write_back__()
+        # 插入
+        if insert_before:
+            self.m_data.insert(start, 0)
+            self.m_data_hilit.insert(start, True)
+
+            # 向後平移
+            self.m_data_select.selectSingle(start + 1)
+            self.m_data_select.setEnd(end + 1)
+        else:
+            self.m_data.insert(end + 1, 0)
+            self.m_data_hilit.insert(end + 1, True)
+        
+        # Update
+        self.__update_content__()
 
