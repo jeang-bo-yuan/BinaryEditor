@@ -2,6 +2,7 @@
 這模組提供了用於顯示二進制資料的表格
 """
 import tkinter as tk
+from tkinter import messagebox
 import re
 import math
 from SelectRange import SelectRange
@@ -233,6 +234,7 @@ class BinTable(tk.Frame):
         self.m_page = 0
         self.__update_content__()
 
+    # page ##############################################################################################################
     def nextPage(self, *args):
         """
         頁數加1
@@ -282,6 +284,7 @@ class BinTable(tk.Frame):
         """
         return self.m_page
 
+    # highlight ######################################################################################################
     def clearHighlights(self, event=None):
         """ 清除所有高亮顯示 """
         self.m_data_hilit = [False for _ in range(len(self.m_data))]
@@ -298,20 +301,27 @@ class BinTable(tk.Frame):
             if 0 <= entry_idx and entry_idx < len(self.m_entries):
                 self.m_entries[entry_idx].configure(background=self.__bg__(entry_idx))
 
+    # select & edit ###########################################################################################
     def deleteSelectedBytes(self):
         """ 將選中的bytes（藍色標記）刪除 """
         R = self.m_data_select.toTuple()
-        if R is None:
+
+        NoSelect = R is None
+        if not NoSelect:
+            start, end = R
+            end = min(end, len(self.m_data) - 1)
+            if start >= len(self.m_data):
+                NoSelect = True
+
+        if NoSelect:
+            messagebox.showerror(None, "!!! No byte is selected !!!")
             return
         
         self.__write_back__()
-
         # 刪除
-        start, end = R
-        if start < len(self.m_data):
-            del self.m_data[start : end + 1]
-            del self.m_data_hilit[start : end + 1]
-            print(f"{end - start + 1} bytes are deleted")
+        del self.m_data[start : end + 1]
+        del self.m_data_hilit[start : end + 1]
+        print(f"{end - start + 1} bytes are deleted")
 
         # 重設
         self.m_data_select.unselect()

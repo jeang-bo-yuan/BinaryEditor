@@ -6,3 +6,7 @@
 ```sh
 python BinaryEditor.py
 ```
+
+# Hotkey
+
+- `Escape` - 取消顯示搜尋結果
