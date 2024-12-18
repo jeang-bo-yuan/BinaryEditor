@@ -31,6 +31,8 @@ class BinaryEditor:
         self.create_page_file_menu()
         # 添加 Edit 選單 ###############################################################################
         self.create_edit_menu()
+        # 添加 Display 選單 ############################################################################
+        self.create_display_menu()
         
         # 添加文件大小顯示的標籤
         self.info_label = tk.Label(
@@ -98,6 +100,16 @@ class BinaryEditor:
         edit_menu.add_command(label="Delete Selected Bytes", command=lambda: self.table.deleteSelectedBytes())
         edit_menu.add_command(label="Insert Before", command=lambda: self.table.insertOneByte(insert_before=True))
         edit_menu.add_command(label="Insert After", command=lambda: self.table.insertOneByte(insert_before=False))
+
+    def create_display_menu(self):
+        display_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="Display", menu=display_menu)
+        TMP = tk.IntVar(value= 16)
+        self.SELECTED_BASE = TMP
+        display_menu.add_radiobutton(label="Binary", command=lambda: self.table.setBase(2), value=2, variable=TMP)
+        display_menu.add_radiobutton(label="Octobor", command=lambda: self.table.setBase(8), value=8, variable=TMP)
+        display_menu.add_radiobutton(label="Decimal", command=lambda: self.table.setBase(10), value=10, variable=TMP)
+        display_menu.add_radiobutton(label="Hexdecimal", command=lambda: self.table.setBase(16), value=16, variable=TMP)
 
     def next_page(self):
         self.table.nextPage()
